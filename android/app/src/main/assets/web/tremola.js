@@ -16,6 +16,9 @@ var colors = ["#d9ceb2", "#99b2b7", "#e6cba5", "#ede3b4", "#8b9e9b", "#bd7578", 
 var curr_img_candidate = null;
 var pubs = []
 
+const GAME_COLUMNS = 7;
+const GAME_ROWS = 6;
+
 // --- menu callbacks
 
 /*
@@ -237,14 +240,14 @@ function members_confirmed() {
 }
 
 function new_game_start() {
-    var playerId = {}
+    var opponent = {}
     for (var m in tremola.contacts) {
         if (document.getElementById(m).checked) {
-            playerId = m;
+            opponent = m;
         }
     }
 
-    var players = [myId, playerId];
+    var players = [myId, opponent];
     var gameId = recps2nm(players);
 
     if (tremola.games == null) {
@@ -253,8 +256,11 @@ function new_game_start() {
 
     if (!(gameId in tremola.games)) {
         tremola.games[gameId] = {
-            "alias": fid2display(playerId) + " vs " + fid2display(myId), "moves": {},
-            "members": players, "touched": Date.now()
+            "alias": fid2display(opponent) + " vs " + fid2display(myId),
+            "board": null,
+            "currentPlayer": opponent,
+            "members": players,
+            "touched": Date.now()
         };
     } else {
         tremola.games[gameId]["touched"] = Date.now();
@@ -536,9 +542,58 @@ function build_game_item(game) { // [ id, { "alias": "player1 vs player2", "move
 }
 
 function open_game_session(gameId) {
+    document.getElementById('game-board').innerHTML = '';
     setScenario('game-session');
 
     document.getElementById("game-session-title").innerHTML = tremola.games[gameId].alias;
+
+    let board = tremola.games[gameId].board
+    if (board == null) {
+        board = Array.from(new Array(7), () => Array.from(new Array(6), () => ({})));
+        tremola.games[gameId].board = board;
+    }
+
+    const opponent = tremola.games[gameId].members.find(member => member != myId);
+
+    board[0][5].owner = myId;
+    board[1][5].owner = opponent;
+
+    for (let y = 0; y < GAME_ROWS; y++) {
+        for (let x = 0; x < GAME_COLUMNS; x++) {
+            let tile = document.createElement('div');
+            tile.className = 'game_tile';
+            tile.onclick = () => addStone(gameId, myId, x);
+
+            const { owner } = board[x][y];
+            if (owner == myId) {
+                tile.style.backgroundColor = "yellow";
+            } else if (owner == opponent) {
+                tile.style.backgroundColor = "red";
+            }
+
+            document.getElementById('game-board').appendChild(tile);
+            board[x][y].tile = tile;
+        }
+    }
+}
+
+function addStone(gameId, playerId, column) {
+    const { board } = tremola.games[gameId];
+
+    const freeSlots = board[column].filter(t => t.owner == null).length;
+    if (freeSlots > 0) {
+        const boardElement = board[column][freeSlots - 1];
+        boardElement.owner = playerId;
+        if (playerId == myId) {
+            boardElement.tile.style.backgroundColor = "yellow";
+        } else {
+            boardElement.tile.style.backgroundColor = "red";
+        }
+    }
+}
+
+function turnOver(gameId) {
+
 }
 
 function load_contact_list() {
