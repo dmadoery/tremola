@@ -60,6 +60,16 @@
 
   <div id='the:connex' style="display: none; margin: 5pt;"></div>
 
+
+  <!-- adding game code-->
+
+  <div id='the:game' class=w100 style="display: none; margin: 5pt;">
+    <h1>Ongoing sessions</h1>
+  </div>
+
+  <!-- game code until here-->
+
+
   <div id='lst:members' style="display: none; margin: 3px;">
     <div style="margin-top: 10pt;"><label><input type="checkbox" id="toggleSwitches1" style="margin-right: 10pt;">
       <div class="contact_item_button light" style="display: inline-block;padding: 5pt;">Choice1<br>more text</div></label>
@@ -363,10 +373,11 @@
 <div id='div:footer' class=neutral style="height: 56px; align-content: center; border: 3px inset #ebf4fa /*var(--light)*/; border-radius: 2px; margin: 3px; width: calc(100% - 12px);">
 
   <table width=100% cellpadding="2pt"><tr>
-    <td width=25%><button id='btn:chats'    class="w100 flat active buttontext" onclick="btnBridge(this);" style="background-image: url('img/chat.svg');">&nbsp;<!-- font size=+3>&#x1F4E8;</font><br><font size=small>Chats</font --></button>
-    <td width=25%><button id='btn:kanban'   class="w100 flat passive buttontext" onclick="btnBridge(this);" style="background-image: url('img/kanban.svg');">&nbsp;<!-- font size=+3>&#x1F5E3;</font><br><font size=small>Board</font --></button>
-    <td width=25%><button id='btn:contacts' class="w100 flat passive buttontext" onclick="btnBridge(this);" style="background-image: url('img/contacts.svg');">&nbsp;<!-- font size=+3>&#x1F465;</font><br><font size=small>Contacts</font --></button>
-    <td width=25%><button id='btn:connex'   class="w100 flat passive buttontext" onclick="btnBridge(this);" style="background-image: url('img/signal.svg');">&nbsp;<!-- font size=+3>&#x1F5E3;</font><br><font size=small>Connex</font --></button>
+    <td width=20%><button id='btn:chats'    class="w100 flat active buttontext" onclick="btnBridge(this);" style="background-image: url('img/chat.svg');">&nbsp;<!-- font size=+3>&#x1F4E8;</font><br><font size=small>Chats</font --></button>
+    <td width=20%><button id='btn:kanban'   class="w100 flat passive buttontext" onclick="btnBridge(this);" style="background-image: url('img/kanban.svg');">&nbsp;<!-- font size=+3>&#x1F5E3;</font><br><font size=small>Board</font --></button>
+    <td width=250><button id='btn:contacts' class="w100 flat passive buttontext" onclick="btnBridge(this);" style="background-image: url('img/contacts.svg');">&nbsp;<!-- font size=+3>&#x1F465;</font><br><font size=small>Contacts</font --></button>
+    <td width=20%><button id='btn:connex'   class="w100 flat passive buttontext" onclick="btnBridge(this);" style="background-image: url('img/signal.svg');">&nbsp;<!-- font size=+3>&#x1F5E3;</font><br><font size=small>Connex</font --></button>
+    <td width=20%><button id='btn:game'     class="w100 flat passive buttontext" onclick="btnBridge(this);" style="background-image: url('img/game-controller.svg');">&nbsp;<!-- font size=+3>&#x1F5E3;</font><br><font size=small>Game</font --></button>
   </table>
 
 </div>

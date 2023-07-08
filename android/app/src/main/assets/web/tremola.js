@@ -54,6 +54,20 @@ function menu_new_contact() {
     overlayIsActive = true;
 }
 
+function menu_new_game() {
+    fill_members();
+        prev_scenario = 'game';
+        setScenario("members");
+        document.getElementById("div:textarea").style.display = 'none';
+        document.getElementById("div:confirm-members").style.display = 'flex';
+        document.getElementById("tremolaTitle").style.display = 'none';
+        var c = document.getElementById("conversationTitle");
+        c.style.display = null;
+        c.innerHTML = "<font size=+1><strong>Create New Game</strong></font><br>Select contact to play";
+        document.getElementById('plus').style.display = 'none';
+        closeOverlay();
+}
+
 function menu_new_pub() {
     menu_edit('new_pub_target', "Enter address of trustworthy pub<br><br>Format:<br><tt>net:IP_ADDR:PORT~shs:ID_OF_PUB</tt>", "");
 }
@@ -207,8 +221,11 @@ function members_confirmed() {
         new_conversation()
     } else if (prev_scenario == 'kanban') {
         menu_new_board_name()
+    } else if (prev_scenario == 'game') {
+        new_game_start()
     }
 }
+
 
 function menu_forget_conv() {
     // toggles the forgotten flag of a conversation

@@ -6,7 +6,7 @@ var overlayIsActive = false;
 
 var display_or_not = [
     'div:qr', 'div:back',
-    'core', 'lst:chats', 'lst:posts', 'lst:contacts', 'lst:members', 'the:connex',
+    'core', 'lst:chats', 'lst:posts', 'lst:contacts', 'lst:members', 'the:connex', 'the:game',
     'lst:kanban', 'div:footer', 'div:textarea', 'div:confirm-members', 'plus',
     'div:settings', 'div:board'
 ];
@@ -19,6 +19,7 @@ var scenarioDisplay = {
     'contacts': ['div:qr', 'core', 'lst:contacts', 'div:footer', 'plus'],
     'posts': ['div:back', 'core', 'lst:posts', 'div:textarea'],
     'connex': ['div:qr', 'core', 'the:connex', 'div:footer', 'plus'],
+    'game': ['div:qr', 'core', 'the:game', 'div:footer', 'plus'],
     'members': ['div:back', 'core', 'lst:members', 'div:confirm-members'],
     'settings': ['div:back', 'div:settings'],
     'kanban': ['div:qr', 'core', 'lst:kanban', 'div:footer', 'plus'],
@@ -40,6 +41,11 @@ var scenarioMenu = {
         // ['<del>Force sync</del>', 'menu_sync'],
         ['Settings', 'menu_settings'],
         ['About', 'menu_about']],
+
+    'game': [['New Game', 'menu_new_game'],
+                    ['Connected Devices', 'menu_connection'],
+                    ['Settings', 'menu_settings'],
+                    ['About', 'menu_about']],
     /*
       ['Redraw', 'menu_redraw'],
       ['Sync', 'menu_sync'],
@@ -83,7 +89,7 @@ function onBackPressed() {
         closeOverlay();
         return;
     }
-    if (['chats', 'contacts', 'connex', 'board'].indexOf(curr_scenario) >= 0) {
+    if (['chats', 'contacts', 'connex', 'board', 'game'].indexOf(curr_scenario) >= 0) {
         if (curr_scenario == 'chats')
             backend("onBackPressed");
         else if (curr_scenario == 'board')
@@ -105,7 +111,7 @@ function setScenario(s) {
     var lst = scenarioDisplay[s];
     if (lst) {
         // if (s != 'posts' && curr_scenario != "members" && curr_scenario != 'posts') {
-        if (['chats', 'contacts', 'connex', 'kanban'].indexOf(curr_scenario) >= 0) {
+        if (['chats', 'contacts', 'connex', 'kanban', 'game'].indexOf(curr_scenario) >= 0) {
             var cl = document.getElementById('btn:' + curr_scenario).classList;
             cl.toggle('active', false);
             cl.toggle('passive', true);
@@ -139,7 +145,7 @@ function setScenario(s) {
             prev_scenario = s;
         }
         curr_scenario = s;
-        if (['chats', 'contacts', 'connex', 'kanban'].indexOf(curr_scenario) >= 0) {
+        if (['chats', 'contacts', 'connex', 'kanban', 'game'].indexOf(curr_scenario) >= 0) {
             var cl = document.getElementById('btn:' + curr_scenario).classList;
             cl.toggle('active', true);
             cl.toggle('passive', false);
@@ -153,7 +159,7 @@ function setScenario(s) {
 
 function btnBridge(e) {
     var e = e.id, m = '';
-    if (['btn:chats', 'btn:posts', 'btn:contacts', 'btn:connex', 'btn:kanban'].indexOf(e) >= 0) {
+    if (['btn:chats', 'btn:posts', 'btn:contacts', 'btn:connex', 'btn:kanban', 'btn:game'].indexOf(e) >= 0) {
         setScenario(e.substring(4));
     }
     if (e == 'btn:menu') {
@@ -270,6 +276,8 @@ function plus_button() {
         menu_new_pub();
     } else if (curr_scenario == 'kanban') {
         menu_new_board();
+    } else if (curr_scenario == 'game' ) {
+        menu_new_game();
     }
 }
 
