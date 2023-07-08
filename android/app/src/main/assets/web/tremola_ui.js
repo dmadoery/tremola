@@ -8,7 +8,7 @@ var display_or_not = [
     'div:qr', 'div:back',
     'core', 'lst:chats', 'lst:posts', 'lst:contacts', 'lst:members', 'the:connex', 'the:game',
     'lst:kanban', 'div:footer', 'div:textarea', 'div:confirm-members', 'plus',
-    'div:settings', 'div:board'
+    'div:settings', 'div:board', 'lst:players', 'the:game-session'
 ];
 
 var prev_scenario = 'chats';
@@ -20,6 +20,8 @@ var scenarioDisplay = {
     'posts': ['div:back', 'core', 'lst:posts', 'div:textarea'],
     'connex': ['div:qr', 'core', 'the:connex', 'div:footer', 'plus'],
     'game': ['div:qr', 'core', 'the:game', 'div:footer', 'plus'],
+    'game-players': ['div:back', 'core', 'lst:players', 'div:confirm-player'],
+    'game-session': ['div:back', 'core', 'the:game-session'],
     'members': ['div:back', 'core', 'lst:members', 'div:confirm-members'],
     'settings': ['div:back', 'div:settings'],
     'kanban': ['div:qr', 'core', 'lst:kanban', 'div:footer', 'plus'],
@@ -41,11 +43,10 @@ var scenarioMenu = {
         // ['<del>Force sync</del>', 'menu_sync'],
         ['Settings', 'menu_settings'],
         ['About', 'menu_about']],
-
-    'game': [['New Game', 'menu_new_game'],
-                    ['Connected Devices', 'menu_connection'],
-                    ['Settings', 'menu_settings'],
-                    ['About', 'menu_about']],
+    'game': [['New Game', 'menu_game_players'],
+        ['Connected Devices', 'menu_connection'],
+        ['Settings', 'menu_settings'],
+        ['About', 'menu_about']],
     /*
       ['Redraw', 'menu_redraw'],
       ['Sync', 'menu_sync'],
@@ -277,7 +278,7 @@ function plus_button() {
     } else if (curr_scenario == 'kanban') {
         menu_new_board();
     } else if (curr_scenario == 'game' ) {
-        menu_new_game();
+        menu_game_players();
     }
 }
 

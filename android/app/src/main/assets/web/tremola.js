@@ -54,18 +54,31 @@ function menu_new_contact() {
     overlayIsActive = true;
 }
 
-function menu_new_game() {
-    fill_members();
-        prev_scenario = 'game';
-        setScenario("members");
-        document.getElementById("div:textarea").style.display = 'none';
-        document.getElementById("div:confirm-members").style.display = 'flex';
-        document.getElementById("tremolaTitle").style.display = 'none';
-        var c = document.getElementById("conversationTitle");
-        c.style.display = null;
-        c.innerHTML = "<font size=+1><strong>Create New Game</strong></font><br>Select contact to play";
-        document.getElementById('plus').style.display = 'none';
-        closeOverlay();
+function menu_game_players() {
+    fill_players();
+    prev_scenario = 'game';
+    setScenario("game-players");
+    document.getElementById("div:textarea").style.display = 'none';
+    document.getElementById("div:confirm-player").style.display = 'flex';
+    document.getElementById("tremolaTitle").style.display = 'none';
+    var c = document.getElementById("conversationTitle");
+    c.style.display = null;
+    c.innerHTML = "<font size=+1><strong>Create New Game</strong></font><br>Select contact to play";
+    document.getElementById('plus').style.display = 'none';
+    closeOverlay();
+}
+
+function fill_players() {
+    var choices = '';
+    for (var m in tremola.contacts) {
+        choices += '<div style="margin-bottom: 10px;"><label><input type="radio" name="players" id="' + m;
+        choices += '" style="vertical-align: middle;"><div class="contact_item_button light" style="white-space: nowrap; width: calc(100% - 40px); padding: 5px; vertical-align: middle;">';
+        choices += '<div style="text-overflow: ellipis; overflow: hidden;">' + escapeHTML(fid2display(m)) + '</div>';
+        choices += '<div style="text-overflow: ellipis; overflow: hidden;"><font size=-2>' + m + '</font></div>';
+        choices += '</div></label></div>\n';
+    }
+    document.getElementById('lst:players').innerHTML = choices
+    document.getElementById(myId).disabled = true;
 }
 
 function menu_new_pub() {
@@ -86,10 +99,9 @@ function menu_stream_all_posts() {
 function menu_redraw() {
     closeOverlay();
 
-    load_chat_list()
-
-    document.getElementById("lst:contacts").innerHTML = '';
+    load_chat_list();
     load_contact_list();
+    load_games_list();
 
     if (curr_scenario == "posts")
         load_chat(curr_chat);
@@ -221,11 +233,38 @@ function members_confirmed() {
         new_conversation()
     } else if (prev_scenario == 'kanban') {
         menu_new_board_name()
-    } else if (prev_scenario == 'game') {
-        new_game_start()
     }
 }
 
+function new_game_start() {
+    var playerId = {}
+    for (var m in tremola.contacts) {
+        if (document.getElementById(m).checked) {
+            playerId = m;
+        }
+    }
+
+    var players = [myId, playerId];
+    var gameId = recps2nm(players);
+
+    if (tremola.games == null) {
+        tremola.games = {};
+    }
+
+    if (!(gameId in tremola.games)) {
+        tremola.games[gameId] = {
+            "alias": fid2display(playerId) + " vs " + fid2display(myId), "moves": {},
+            "members": players, "touched": Date.now()
+        };
+    } else {
+        tremola.games[gameId]["touched"] = Date.now();
+    }
+
+    persist();
+
+    document.getElementById("div:confirm-player").style.display = 'none';
+    open_game_session(gameId);
+}
 
 function menu_forget_conv() {
     // toggles the forgotten flag of a conversation
@@ -475,6 +514,31 @@ function load_chat_item(nm) { // appends a button for conversation with name nm 
     item.innerHTML = row;
     cl.appendChild(item);
     set_chats_badge(nm)
+}
+
+function load_games_list() {
+    document.getElementById("lst:games").innerHTML = '';
+    for (var gameId in tremola.games) {
+        build_game_item([gameId, tremola.games[gameId]]);
+    }
+}
+
+function build_game_item(game) { // [ id, { "alias": "player1 vs player2", "moves": {}, members: [] } ] }
+    var row, item = document.createElement('div'), bg;
+    item.setAttribute('style', 'padding: 0px 5px 10px 5px;'); // old JS (SDK 23)
+
+    row = "<button class='chat_item_button light' style='overflow: hidden; width: calc(100% - 4em);' onclick='open_game_session(\"" + game[0] + "\");'>";
+    row += "<div style='white-space: nowrap;'><div style='text-overflow: ellipsis; overflow: hidden;'>" + escapeHTML(game[1].alias) + "</div>";
+    row += "<div style='text-overflow: clip; overflow: ellipsis;'><font size=-2>" + game[0] + "</font></div></div></button>";
+
+    item.innerHTML = row;
+    document.getElementById('lst:games').appendChild(item);
+}
+
+function open_game_session(gameId) {
+    setScenario('game-session');
+
+    document.getElementById("game-session-title").innerHTML = tremola.games[gameId].alias;
 }
 
 function load_contact_list() {
@@ -1013,6 +1077,7 @@ function b2f_initialize(id) {
     load_chat_list()
     load_contact_list()
     load_board_list()
+    load_games_list();
 
     closeOverlay();
     setScenario('chats');
