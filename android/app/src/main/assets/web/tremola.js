@@ -257,19 +257,17 @@ function new_game_start() {
     if (!(gameId in tremola.games)) {
         tremola.games[gameId] = {
             alias: fid2display(opponent) + " vs " + fid2display(myId),
-            board: null,
+            board: Array.from(new Array(7), () => Array.from(new Array(6), () => ({}))),
             currentPlayer: opponent,
-            members: players,
-            touched: Date.now()
+            members: players
         };
-    } else {
-        tremola.games[gameId]["touched"] = Date.now();
     }
-
-    persist();
 
     document.getElementById("div:confirm-player").style.display = 'none';
     open_game_session(gameId);
+
+    persist();
+    send_board(gameId);
 }
 
 function menu_forget_conv() {
@@ -524,7 +522,7 @@ function load_chat_item(nm) { // appends a button for conversation with name nm 
 
 function load_games_list() {
     document.getElementById("lst:games").innerHTML = '';
-    for (var gameId in tremola.games) {
+    for (let gameId in tremola.games) {
         build_game_item([gameId, tremola.games[gameId]]);
     }
 }
@@ -541,21 +539,65 @@ function build_game_item(game) { // [ id, { "alias": "player1 vs player2", "move
     document.getElementById('lst:games').appendChild(item);
 }
 
+function game_new_event(e) {
+    console.log("new event recieved", e);
+    console.log("event json: ", JSON.stringify(e));
+    console.log("event json: ", JSON.stringify(e.header));
+
+    let gameId = e.public[1];
+    let playerToMove = e.public[2];
+    let members = e.public[3].split(',');
+    let boardString = e.public[4];
+
+    if (gameId in tremola.games) {
+        delete tremola.games[gameId];
+    }
+
+    let idlePlayer = members.find(member => member != myId);
+    const board = Array.from(new Array(7), () => Array.from(new Array(6), () => ({})));
+
+    let i = 0;
+    for (let x = 0; x < 7; x++) {
+    	for (let y = 0; y < 6; y++) {
+      	if (boardString[i] == '1') {
+        	board[x][y].owner = playerToMove;
+        } else if (boardString[i] == '2') {
+        	board[x][y].owner = idlePlayer;
+        }
+
+        i++;
+      }
+    }
+
+    const opponent = playerToMove == myId ? idlePlayer : playerToMove;
+
+    tremola.games[gameId] = {
+        board: board,
+        members: members,
+        currentPlayer: playerToMove,
+        alias: fid2display(opponent) + " vs " + fid2display(myId)
+    };
+    persist();
+
+    populate_game(gameId);
+    load_games_list();
+}
+
 function open_game_session(gameId) {
-    document.getElementById('game-board').innerHTML = '';
     setScenario('game-session');
 
     document.getElementById("game-session-title").innerHTML = tremola.games[gameId].alias;
     document.getElementById("game-end-button").onclick = () => end_game(gameId);
     set_turn_indicator(gameId);
 
-    let board = tremola.games[gameId].board
-    if (board == null) {
-        board = Array.from(new Array(7), () => Array.from(new Array(6), () => ({})));
-        tremola.games[gameId].board = board;
-    }
+    populate_game(gameId);
+}
 
-    const opponent = tremola.games[gameId].members.find(member => member != myId);
+function populate_game(gameId) {
+    document.getElementById('game-board').innerHTML = '';
+
+    const { board, members } = tremola.games[gameId];
+    const opponent = members.find(member => member != myId);
 
     for (let y = 0; y < GAME_ROWS; y++) {
         for (let x = 0; x < GAME_COLUMNS; x++) {
@@ -574,9 +616,6 @@ function open_game_session(gameId) {
             board[x][y].tile = tile;
         }
     }
-
-    //TODO: Remove this
-    add_stone(gameId, 0);
 }
 
 function add_stone(gameId, column) {
@@ -605,7 +644,7 @@ function add_stone(gameId, column) {
             return;
         }
 
-        turn_over(gameId);
+        end_turn(gameId);
     }
 }
 
@@ -647,7 +686,7 @@ function check_line(a, b, c, d) {
             a.owner == d.owner;
 }
 
-function turn_over(gameId) {
+function end_turn(gameId) {
     const { currentPlayer } = tremola.games[gameId];
     const opponent = tremola.games[gameId].members.find(member => member != myId);
 
@@ -658,13 +697,30 @@ function turn_over(gameId) {
     }
 
     set_turn_indicator(gameId);
+    send_board(gameId);
+}
 
-    //TODO: Remove this
-    if (currentPlayer == myId) {
-        setTimeout(() => {
-            add_stone(gameId, Math.floor(Math.random() * GAME_COLUMNS));
-        }, 500);
-    }
+function send_board(gameId) {
+    const { board, currentPlayer: playerToMove } = tremola.games[gameId];
+    let boardString = ""
+
+    board.forEach((column, ci) => {
+      column.forEach((_, ri) => {
+        if (board[ci][ri].owner != null) {
+          if (board[ci][ri].owner == playerToMove) {
+            boardString += "1"
+          } else {
+            boardString += "2"
+          }
+        } else {
+          boardString += "0"
+        }
+      })
+    })
+
+    const { members } = tremola.games[gameId];
+
+    backend(`connect_four ${gameId} ${playerToMove} ${members.join(',')} ${boardString}`);
 }
 
 function set_turn_indicator(gameId) {
@@ -676,8 +732,9 @@ function set_turn_indicator(gameId) {
 }
 
 function end_game(gameId) {
-    delete tremola.games[gameId]
-    setScenario('game')
+    delete tremola.games[gameId];
+    setScenario('game');
+    persist();
     load_games_list();
 }
 
@@ -1008,7 +1065,8 @@ function resetTremola() { // wipes browser-side content
         "profile": {},
         "id": myId,
         "settings": get_default_settings(),
-        "board": {}
+        "board": {},
+        "games": {}
     }
     var n = recps2nm([myId])
     tremola.chats[n] = {
@@ -1073,7 +1131,6 @@ function b2f_local_peer_remaining_updates(identifier, remaining) {
 }
 
 function b2f_local_peer(type, identifier, displayname, status) {
-    console.log( "incoming displayname:", displayname)
     if (displayname == "null") {
         displayname = identifier
     }
@@ -1084,8 +1141,6 @@ function b2f_local_peer(type, identifier, displayname, status) {
         'status': status,
         'remaining': null
     }
-
-    console.log("local_peer:", type, identifier, displayname, status)
 
     if (status == "offline")
         delete localPeers[identifier]
@@ -1158,6 +1213,8 @@ function b2f_new_event(e) { // incoming SSB log event: we get map with three ent
         } else if (e.public[0] == "KAN") { // Kanban board event
             console.log("New kanban event")
             kanban_new_event(e)
+        } else if (e.public[0] == "GME") {
+            game_new_event(e);
         }
 
         persist();

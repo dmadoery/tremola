@@ -17,6 +17,7 @@ import org.json.JSONObject
 import nz.scuttlebutt.tremolavossbol.tssb.LogTinyEntry
 import nz.scuttlebutt.tremolavossbol.utils.Bipf
 import nz.scuttlebutt.tremolavossbol.utils.Bipf.Companion.BIPF_LIST
+import nz.scuttlebutt.tremolavossbol.utils.Constants.Companion.TINYSSB_APP_GAME
 import nz.scuttlebutt.tremolavossbol.utils.Constants.Companion.TINYSSB_APP_TEXTANDVOICE
 import nz.scuttlebutt.tremolavossbol.utils.Constants.Companion.TINYSSB_APP_KANBAN
 import nz.scuttlebutt.tremolavossbol.utils.HelperFunctions.Companion.toBase64
@@ -198,6 +199,9 @@ class WebAppInterface(val act: MainActivity, val webView: WebView) {
 
                 kanban(bid, prev , op, argsList)
             }
+            "connect_four" -> {
+                connect_four(args[1], args[2], args[3], args[4]);
+            }
             else -> {
                 Log.d("onFrontendRequest", "unknown")
             }
@@ -295,6 +299,22 @@ class WebAppInterface(val act: MainActivity, val webView: WebView) {
         //if (body != null)
             //act.tinyNode.publish_public_content(body)
 
+    }
+
+    fun connect_four(gameId: String, currentPlayer: String, members: String, board: String) {
+        val lst = Bipf.mkList()
+        Bipf.list_append(lst, TINYSSB_APP_GAME)
+        Bipf.list_append(lst, Bipf.mkString(gameId))
+        Bipf.list_append(lst, Bipf.mkString(currentPlayer))
+        Bipf.list_append(lst, Bipf.mkString(members))
+        Bipf.list_append(lst, Bipf.mkString(board))
+
+        val body = Bipf.encode(lst)
+
+        if (body != null) {
+            Log.d("connect_four", "published bytes: " + Bipf.decode(body))
+            act.tinyNode.publish_public_content(body)
+        }
     }
 
     fun return_voice(voice: ByteArray) {
