@@ -104,6 +104,7 @@ function onBackPressed() {
             document.getElementById('div:footer').style.display = null;
         }
         setScenario(prev_scenario);
+        load_games_list();
     }
 }
 

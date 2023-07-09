@@ -546,6 +546,7 @@ function open_game_session(gameId) {
     setScenario('game-session');
 
     document.getElementById("game-session-title").innerHTML = tremola.games[gameId].alias;
+    document.getElementById("game-end-button").onclick = () => end_game(gameId);
 
     let board = tremola.games[gameId].board
     if (board == null) {
@@ -594,6 +595,12 @@ function addStone(gameId, playerId, column) {
 
 function turnOver(gameId) {
 
+}
+
+function end_game(gameId) {
+    delete tremola.games[gameId]
+    setScenario('game')
+    load_games_list();
 }
 
 function load_contact_list() {
