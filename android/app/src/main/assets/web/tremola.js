@@ -256,11 +256,11 @@ function new_game_start() {
 
     if (!(gameId in tremola.games)) {
         tremola.games[gameId] = {
-            "alias": fid2display(opponent) + " vs " + fid2display(myId),
-            "board": null,
-            "currentPlayer": opponent,
-            "members": players,
-            "touched": Date.now()
+            alias: fid2display(opponent) + " vs " + fid2display(myId),
+            board: null,
+            currentPlayer: opponent,
+            members: players,
+            touched: Date.now()
         };
     } else {
         tremola.games[gameId]["touched"] = Date.now();
@@ -547,6 +547,7 @@ function open_game_session(gameId) {
 
     document.getElementById("game-session-title").innerHTML = tremola.games[gameId].alias;
     document.getElementById("game-end-button").onclick = () => end_game(gameId);
+    set_turn_indicator(gameId);
 
     let board = tremola.games[gameId].board
     if (board == null) {
@@ -556,14 +557,11 @@ function open_game_session(gameId) {
 
     const opponent = tremola.games[gameId].members.find(member => member != myId);
 
-    board[0][5].owner = myId;
-    board[1][5].owner = opponent;
-
     for (let y = 0; y < GAME_ROWS; y++) {
         for (let x = 0; x < GAME_COLUMNS; x++) {
             let tile = document.createElement('div');
             tile.className = 'game_tile';
-            tile.onclick = () => addStone(gameId, myId, x);
+            tile.onclick = () => add_stone(gameId, x);
 
             const { owner } = board[x][y];
             if (owner == myId) {
@@ -576,25 +574,105 @@ function open_game_session(gameId) {
             board[x][y].tile = tile;
         }
     }
+
+    //TODO: Remove this
+    add_stone(gameId, 0);
 }
 
-function addStone(gameId, playerId, column) {
-    const { board } = tremola.games[gameId];
+function add_stone(gameId, column) {
+    const { board, currentPlayer } = tremola.games[gameId];
 
     const freeSlots = board[column].filter(t => t.owner == null).length;
     if (freeSlots > 0) {
         const boardElement = board[column][freeSlots - 1];
-        boardElement.owner = playerId;
-        if (playerId == myId) {
+        boardElement.owner = currentPlayer;
+        if (currentPlayer == myId) {
             boardElement.tile.style.backgroundColor = "yellow";
         } else {
             boardElement.tile.style.backgroundColor = "red";
         }
+
+        const gameover = check_gameover(gameId);
+        if (gameover) {
+            if (currentPlayer == myId) {
+                document.getElementById("game-turn-indicator").innerHTML = "You WON!";
+            } else {
+                document.getElementById("game-turn-indicator").innerHTML = "You LOST!";
+            }
+
+            // TODO: Rematch button
+            document.getElementById("game-end-button").innerHTML = "End!";
+            return;
+        }
+
+        turn_over(gameId);
     }
 }
 
-function turnOver(gameId) {
+function check_gameover(gameId) {
+    const { board: b } = tremola.games[gameId];
 
+    // Check down
+    for (let y = 0; y < 3; y++)
+        for (let x = 0; x < 7; x++)
+            if (check_line(b[x][y], b[x][y+1], b[x][y+2], b[x][y+3]))
+                return true;
+
+    // Check right
+    for (let y = 0; y < 6; y++)
+        for (let x = 0; x < 4; x++)
+            if (check_line(b[x][y], b[x+1][y], b[x+2][y], b[x+3][y]))
+                return true;
+
+    // Check down-right
+    for (let y = 0; y < 3; y++)
+        for (let x = 0; x < 4; x++)
+            if (check_line(b[x][y], b[x+1][y+1], b[x+2][y+2], b[x+3][y+3]))
+                return true;
+
+    // Check down-left
+    for (let y = 3; y < 6; y++)
+        for (let x = 0; x < 4; x++)
+            if (check_line(b[x][y], b[x+1][y-1], b[x+2][y-2], b[x+3][y-3]))
+                return true;
+
+    return false;
+}
+
+function check_line(a, b, c, d) {
+    // Check first cell non-zero and all cells match
+    return a.owner != null &&
+            a.owner == b.owner &&
+            a.owner == c.owner &&
+            a.owner == d.owner;
+}
+
+function turn_over(gameId) {
+    const { currentPlayer } = tremola.games[gameId];
+    const opponent = tremola.games[gameId].members.find(member => member != myId);
+
+    if (currentPlayer == myId) {
+        tremola.games[gameId].currentPlayer = opponent;
+    } else {
+        tremola.games[gameId].currentPlayer = myId;
+    }
+
+    set_turn_indicator(gameId);
+
+    //TODO: Remove this
+    if (currentPlayer == myId) {
+        setTimeout(() => {
+            add_stone(gameId, Math.floor(Math.random() * GAME_COLUMNS));
+        }, 500);
+    }
+}
+
+function set_turn_indicator(gameId) {
+    if (tremola.games[gameId].currentPlayer == myId) {
+        document.getElementById("game-turn-indicator").innerHTML = "Your turn!";
+    } else {
+        document.getElementById("game-turn-indicator").innerHTML = "Wait for your opponent.";
+    }
 }
 
 function end_game(gameId) {
