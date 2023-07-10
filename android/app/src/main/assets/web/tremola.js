@@ -641,11 +641,29 @@ function add_stone(gameId, column) {
 
             // TODO: Rematch button
             document.getElementById("game-end-button").innerHTML = "End!";
+            document.getElementById("game-rematch-button").style = "display: flex"
+            document.getElementById("game-rematch-button").innerHTML = "Rematch";
+            document.getElementById("game-rematch-button").onclick = () => reset_game_field(gameId);
+
             return;
         }
 
         end_turn(gameId);
     }
+}
+
+function reset_game_field(gameId) {
+     document.getElementById("game-rematch-button").style = "display: none"
+     const { board: b } = tremola.games[gameId];
+     for (let x = 0; x < 7; x++) {
+        for (let y = 0; y < 6; y++) {
+            b[x][y].owner = undefined;
+        }
+     }
+     persist();
+     set_turn_indicator(gameId);
+     populate_game(gameId);
+
 }
 
 function check_gameover(gameId) {
