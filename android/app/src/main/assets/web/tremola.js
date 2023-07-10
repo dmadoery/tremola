@@ -622,10 +622,10 @@ function add_stone(gameId, column) {
     const { board, currentPlayer } = tremola.games[gameId];
 
     const freeSlots = board[column].filter(t => t.owner == null).length;
-    if (freeSlots > 0) {
+    if (freeSlots > 0 && currentPlayer == myId) {
         const boardElement = board[column][freeSlots - 1];
         boardElement.owner = currentPlayer;
-        if (currentPlayer == myId) {
+        if (currentPlayer == myId) { // hier wird warscheinlich der fehler entstehen, dass alles rot wird!!
             boardElement.tile.style.backgroundColor = "yellow";
         } else {
             boardElement.tile.style.backgroundColor = "red";
@@ -638,10 +638,9 @@ function add_stone(gameId, column) {
             } else {
                 document.getElementById("game-turn-indicator").innerHTML = "You LOST!";
             }
-
-            // TODO: Rematch button
+            // TODO: Add end_turn()
             document.getElementById("game-end-button").innerHTML = "End!";
-            document.getElementById("game-rematch-button").style = "display: flex"
+            document.getElementById("game-rematch-button").style = "display: flex";
             document.getElementById("game-rematch-button").innerHTML = "Rematch";
             document.getElementById("game-rematch-button").onclick = () => reset_game_field(gameId);
 
@@ -653,7 +652,8 @@ function add_stone(gameId, column) {
 }
 
 function reset_game_field(gameId) {
-     document.getElementById("game-rematch-button").style = "display: none"
+     document.getElementById("game-rematch-button").style = "display: none";
+     document.getElementById("game-end-button").innerHTML = "Give up";
      const { board: b } = tremola.games[gameId];
      for (let x = 0; x < 7; x++) {
         for (let y = 0; y < 6; y++) {
@@ -750,6 +750,8 @@ function set_turn_indicator(gameId) {
 }
 
 function end_game(gameId) {
+    document.getElementById("game-rematch-button").style = "display: none";
+    document.getElementById("game-end-button").innerHTML = "Give up";
     delete tremola.games[gameId];
     setScenario('game');
     persist();
