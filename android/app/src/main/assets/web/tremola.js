@@ -608,28 +608,29 @@ function populate_game(gameId) {
             const { owner } = board[x][y];
             if (owner == myId) {
                 tile.style.backgroundColor = "yellow";
-            } else if (owner == opponent) {
+            } else if (owner != myId && owner != null) {
                 tile.style.backgroundColor = "red";
             }
 
             document.getElementById('game-board').appendChild(tile);
             board[x][y].tile = tile;
+
         }
     }
+    //TODO: test if game already won! and set scenario to lost/win!
+    set_turn_indicator(gameId);
 }
 
 function add_stone(gameId, column) {
+    //TODO: after click on field all stones turn red! But the opponent gets the right field!
     const { board, currentPlayer } = tremola.games[gameId];
 
     const freeSlots = board[column].filter(t => t.owner == null).length;
     if (freeSlots > 0 && currentPlayer == myId) {
         const boardElement = board[column][freeSlots - 1];
-        boardElement.owner = currentPlayer;
-        if (currentPlayer == myId) { // hier wird warscheinlich der fehler entstehen, dass alles rot wird!!
-            boardElement.tile.style.backgroundColor = "yellow";
-        } else {
-            boardElement.tile.style.backgroundColor = "red";
-        }
+        boardElement.owner = myId;
+
+        boardElement.tile.style.backgroundColor = "yellow";
 
         const gameover = check_gameover(gameId);
         if (gameover) {
@@ -638,7 +639,7 @@ function add_stone(gameId, column) {
             } else {
                 document.getElementById("game-turn-indicator").innerHTML = "You LOST!";
             }
-            // TODO: Add end_turn()
+            //TODO: End turn when game won to send board to opponent!
             document.getElementById("game-end-button").innerHTML = "End!";
             document.getElementById("game-rematch-button").style = "display: flex";
             document.getElementById("game-rematch-button").innerHTML = "Rematch";
@@ -713,7 +714,7 @@ function end_turn(gameId) {
     } else {
         tremola.games[gameId].currentPlayer = myId;
     }
-
+    persist();
     set_turn_indicator(gameId);
     send_board(gameId);
 }
@@ -750,6 +751,7 @@ function set_turn_indicator(gameId) {
 }
 
 function end_game(gameId) {
+    //TODO: end game has to inform opponent that game ended!
     document.getElementById("game-rematch-button").style = "display: none";
     document.getElementById("game-end-button").innerHTML = "Give up";
     delete tremola.games[gameId];
