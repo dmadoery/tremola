@@ -259,7 +259,8 @@ function new_game_start() {
             alias: fid2display(opponent) + " vs " + fid2display(myId),
             board: Array.from(new Array(7), () => Array.from(new Array(6), () => ({}))),
             currentPlayer: opponent,
-            members: players
+            members: players,
+            gameOver: false
         };
     }
 
@@ -540,20 +541,16 @@ function build_game_item(game) { // [ id, { "alias": "player1 vs player2", "move
 }
 
 function game_new_event(e) {
-    console.log("new event recieved", e);
-    console.log("event json: ", JSON.stringify(e));
-    console.log("event json: ", JSON.stringify(e.header));
-
-    let gameId = e.public[1];
-    let playerToMove = e.public[2];
-    let members = e.public[3].split(',');
-    let boardString = e.public[4];
+    const gameId = e.public[1];
+    const playerToMove = e.public[2];
+    const members = e.public[3].split(',');
+    const boardString = e.public[4];
 
     if (gameId in tremola.games) {
         delete tremola.games[gameId];
     }
 
-    let idlePlayer = members.find(member => member != myId);
+    let idlePlayer = members.find(member => member != playerToMove);
     const board = Array.from(new Array(7), () => Array.from(new Array(6), () => ({})));
 
     let i = 0;
@@ -575,12 +572,29 @@ function game_new_event(e) {
         board: board,
         members: members,
         currentPlayer: playerToMove,
-        alias: fid2display(opponent) + " vs " + fid2display(myId)
+        alias: fid2display(opponent) + " vs " + fid2display(myId),
+        gameOver: false
     };
     persist();
 
     populate_game(gameId);
     load_games_list();
+}
+
+function game_end_event(e) {
+    const gameId = e.public[1];
+    const loser = e.public[2];
+
+    tremola.games[gameId].gameOver = true;
+    persist();
+
+    if (loser != myId) {
+        document.getElementById("game-turn-indicator").innerHTML = "You WON!";
+    } else {
+        document.getElementById("game-turn-indicator").innerHTML = "You LOST!";
+    }
+
+    document.getElementById("game-end-button").innerHTML = "End!";
 }
 
 function open_game_session(gameId) {
@@ -617,34 +631,29 @@ function populate_game(gameId) {
 
         }
     }
-    //TODO: test if game already won! and set scenario to lost/win!
+
     set_turn_indicator(gameId);
 }
 
 function add_stone(gameId, column) {
-    //TODO: after click on field all stones turn red! But the opponent gets the right field!
-    const { board, currentPlayer } = tremola.games[gameId];
+    const { board, currentPlayer, members, gameOver } = tremola.games[gameId];
+
+    if (currentPlayer != myId || gameOver) {
+        return;
+    }
 
     const freeSlots = board[column].filter(t => t.owner == null).length;
-    if (freeSlots > 0 && currentPlayer == myId) {
+    if (freeSlots > 0) {
         const boardElement = board[column][freeSlots - 1];
         boardElement.owner = myId;
-
         boardElement.tile.style.backgroundColor = "yellow";
 
         const gameover = check_gameover(gameId);
         if (gameover) {
-            if (currentPlayer == myId) {
-                document.getElementById("game-turn-indicator").innerHTML = "You WON!";
-            } else {
-                document.getElementById("game-turn-indicator").innerHTML = "You LOST!";
-            }
-            //TODO: End turn when game won to send board to opponent!
-            document.getElementById("game-end-button").innerHTML = "End!";
-            document.getElementById("game-rematch-button").style = "display: flex";
-            document.getElementById("game-rematch-button").innerHTML = "Rematch";
-            document.getElementById("game-rematch-button").onclick = () => reset_game_field(gameId);
-
+            const loser = members.find(member => member != myId);
+            tremola.games[gameId].gameOver = true;
+            persist();
+            backend(`connect_four_end ${gameId} ${loser}`);
             return;
         }
 
@@ -653,7 +662,6 @@ function add_stone(gameId, column) {
 }
 
 function reset_game_field(gameId) {
-     document.getElementById("game-rematch-button").style = "display: none";
      document.getElementById("game-end-button").innerHTML = "Give up";
      const { board: b } = tremola.games[gameId];
      for (let x = 0; x < 7; x++) {
@@ -751,9 +759,8 @@ function set_turn_indicator(gameId) {
 }
 
 function end_game(gameId) {
-    //TODO: end game has to inform opponent that game ended!
-    document.getElementById("game-rematch-button").style = "display: none";
     document.getElementById("game-end-button").innerHTML = "Give up";
+    backend(`connect_four_end ${gameId} ${myId}`);
     delete tremola.games[gameId];
     setScenario('game');
     persist();
@@ -1237,6 +1244,8 @@ function b2f_new_event(e) { // incoming SSB log event: we get map with three ent
             kanban_new_event(e)
         } else if (e.public[0] == "GME") {
             game_new_event(e);
+        } else if (e.public[0] == "GEE") {
+            game_end_event(e);
         }
 
         persist();
