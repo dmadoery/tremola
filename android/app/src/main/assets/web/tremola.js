@@ -57,6 +57,9 @@ function menu_new_contact() {
     overlayIsActive = true;
 }
 
+/**
+ * Opponent selection menu. Uses game-players scenario.
+ */
 function menu_game_players() {
     fill_players();
     prev_scenario = 'game';
@@ -71,6 +74,9 @@ function menu_game_players() {
     closeOverlay();
 }
 
+/**
+ * Fills contacts into player selection.
+ */
 function fill_players() {
     var choices = '';
     for (var m in tremola.contacts) {
@@ -239,6 +245,10 @@ function members_confirmed() {
     }
 }
 
+/**
+ * Starts new game, creates it and stores it into the store.
+ * Gives over to open_game_session().
+ */
 function new_game_start() {
     var opponent = {}
     for (var m in tremola.contacts) {
@@ -521,6 +531,10 @@ function load_chat_item(nm) { // appends a button for conversation with name nm 
     set_chats_badge(nm)
 }
 
+/**
+ * Clear all ongoing games within lst:games and builds the game button
+ * for each ongoing game.
+ */
 function load_games_list() {
     document.getElementById("lst:games").innerHTML = '';
     for (let gameId in tremola.games) {
@@ -528,6 +542,10 @@ function load_games_list() {
     }
 }
 
+/**
+ * Create game button to resume ongoing game.
+ *
+ */
 function build_game_item(game) { // [ id, { "alias": "player1 vs player2", "moves": {}, members: [] } ] }
     var row, item = document.createElement('div'), bg;
     item.setAttribute('style', 'padding: 0px 5px 10px 5px;'); // old JS (SDK 23)
@@ -540,6 +558,11 @@ function build_game_item(game) { // [ id, { "alias": "player1 vs player2", "move
     document.getElementById('lst:games').appendChild(item);
 }
 
+/**
+ * Is called after a new turn is received via the backend.
+ * Based on the playerToMove it assigns all board tiles to their
+ * respective owner and gives over to populate_game().
+ */
 function game_new_event(e) {
     const gameId = e.public[1];
     const playerToMove = e.public[2];
@@ -581,6 +604,12 @@ function game_new_event(e) {
     load_games_list();
 }
 
+/**
+ * This is received when the game is over, either if someone
+ * won or if a player gave up. It updates the up and marks the
+ * game as over in the store.
+ *
+ */
 function game_end_event(e) {
     const gameId = e.public[1];
     const loser = e.public[2];
@@ -597,6 +626,10 @@ function game_end_event(e) {
     document.getElementById("game-end-button").innerHTML = "End!";
 }
 
+/**
+ * Sets game-session scenario, title and button.
+ * Gives over to populate_game() afterwards.
+ */
 function open_game_session(gameId) {
     setScenario('game-session');
 
@@ -607,6 +640,11 @@ function open_game_session(gameId) {
     populate_game(gameId);
 }
 
+/**
+ * Creates the board and all the clickable tile elements.
+ * Color of tiles is given based on owner of the tile.
+ * Can also be used when game is not shown currently.
+ */
 function populate_game(gameId) {
     document.getElementById('game-board').innerHTML = '';
 
@@ -635,6 +673,11 @@ function populate_game(gameId) {
     set_turn_indicator(gameId);
 }
 
+/**
+ * Tries to add a playing stone to the game field.
+ * After the stone is placed, checks if game is over and if so,
+ * informs the backend. If not gives over to end_turn().
+ */
 function add_stone(gameId, column) {
     const { board, currentPlayer, members, gameOver } = tremola.games[gameId];
 
@@ -661,20 +704,10 @@ function add_stone(gameId, column) {
     }
 }
 
-function reset_game_field(gameId) {
-     document.getElementById("game-end-button").innerHTML = "Give up";
-     const { board: b } = tremola.games[gameId];
-     for (let x = 0; x < 7; x++) {
-        for (let y = 0; y < 6; y++) {
-            b[x][y].owner = undefined;
-        }
-     }
-     persist();
-     set_turn_indicator(gameId);
-     populate_game(gameId);
-
-}
-
+/**
+ * Checks if game is over by checking if stones align so
+ * that 4 stones are adjacent to each other.
+ */
 function check_gameover(gameId) {
     const { board: b } = tremola.games[gameId];
 
@@ -705,6 +738,10 @@ function check_gameover(gameId) {
     return false;
 }
 
+/**
+ * Helper function for check_gameover() to check if 4 stones
+ * are adjacent.
+ */
 function check_line(a, b, c, d) {
     // Check first cell non-zero and all cells match
     return a.owner != null &&
@@ -713,6 +750,11 @@ function check_line(a, b, c, d) {
             a.owner == d.owner;
 }
 
+/**
+ * Sets the new currentPlayer to the store and updates
+ * the UI accordingly with the turn indicator.
+ * Sends board information after turn is over via backend.
+ */
 function end_turn(gameId) {
     const { currentPlayer } = tremola.games[gameId];
     const opponent = tremola.games[gameId].members.find(member => member != myId);
@@ -727,6 +769,10 @@ function end_turn(gameId) {
     send_board(gameId);
 }
 
+/**
+ * Converts board state to a string encoding and sends
+ * game information via backend.
+ */
 function send_board(gameId) {
     const { board, currentPlayer: playerToMove } = tremola.games[gameId];
     let boardString = ""
@@ -750,6 +796,9 @@ function send_board(gameId) {
     backend(`connect_four ${gameId} ${playerToMove} ${members.join(',')} ${boardString}`);
 }
 
+/**
+ * Sets UI turn indicator accoring to currentPlayer.
+ */
 function set_turn_indicator(gameId) {
     if (tremola.games[gameId].currentPlayer == myId) {
         document.getElementById("game-turn-indicator").innerHTML = "Your turn!";
@@ -758,6 +807,9 @@ function set_turn_indicator(gameId) {
     }
 }
 
+/**
+ * Ends game, either by Giving up or if game is over.
+ */
 function end_game(gameId) {
     document.getElementById("game-end-button").innerHTML = "Give up";
     backend(`connect_four_end ${gameId} ${myId}`);
